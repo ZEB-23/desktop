@@ -198,6 +198,11 @@ class UpdateStore {
    *                       attempt to retrieve the latest available deployment.
    */
   public async checkForUpdates(inBackground: boolean, skipGuidCheck: boolean) {
+    // An empty feed explicitly disables updates in independently distributed builds.
+    if (__UPDATES_URL__.length === 0) {
+      return
+    }
+
     // An update has been downloaded and the app is waiting to be restarted.
     // Checking for updates again may result in the running app being nuked
     // when it finds a subsequent update on Windows, or the "Quit and Update"

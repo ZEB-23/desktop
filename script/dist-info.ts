@@ -95,7 +95,7 @@ export function getWindowsDeltaNugetPackagePath() {
 }
 
 export function getWindowsIdentifierName() {
-  return 'GitHubDesktop'
+  return 'GitHubDesktopWordWrapBeta'
 }
 
 export function getBundleSizes() {
@@ -147,7 +147,10 @@ export function getUpdatesURL() {
 export function shouldMakeDelta() {
   // Only production and beta channels include deltas. Test releases aren't
   // necessarily sequential so deltas wouldn't make sense.
-  return ['production', 'beta'].includes(getChannel())
+  return (
+    process.env.DESKTOP_UNSIGNED !== '1' &&
+    ['production', 'beta'].includes(getChannel())
+  )
 }
 
 /**

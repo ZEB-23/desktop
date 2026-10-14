@@ -114,7 +114,11 @@ function packageWindows() {
     options.remoteReleases = url.toString()
   }
 
-  if (isGitHubActions() && isPublishable()) {
+  if (
+    isGitHubActions() &&
+    isPublishable() &&
+    process.env.DESKTOP_UNSIGNED !== '1'
+  ) {
     assertNonNullable(process.env.RUNNER_TEMP, 'Missing RUNNER_TEMP env var')
 
     const acsPath = join(process.env.RUNNER_TEMP, 'acs')

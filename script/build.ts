@@ -69,6 +69,7 @@ import assert from 'assert'
 import { copyCopilotDependency } from './copilot'
 
 const isPublishableBuild = isPublishable()
+const isUnsignedBuild = process.env.DESKTOP_UNSIGNED === '1'
 const isDevelopmentBuild = getChannel() === 'development'
 const shouldSkipPackaging = process.env.DESKTOP_SKIP_PACKAGE === '1'
 
@@ -97,7 +98,12 @@ generateLicenseMetadata(outRoot)
 
 moveAnalysisFiles()
 
-if (isGitHubActions() && process.platform === 'darwin' && isPublishableBuild) {
+if (
+  isGitHubActions() &&
+  process.platform === 'darwin' &&
+  isPublishableBuild &&
+  !isUnsignedBuild
+) {
   console.log('Setting up keychain…')
   cp.execSync(path.join(__dirname, 'setup-macos-keychain'))
 }
@@ -176,10 +182,14 @@ async function packageApp() {
   }
 
   // get notarization deets, unless we're not going to publish this
-  const osxNotarize = isPublishableBuild ? getNotarizationOptions() : undefined
+  const osxNotarize =
+    isPublishableBuild && !isUnsignedBuild
+      ? getNotarizationOptions()
+      : undefined
 
   if (
     isPublishableBuild &&
+    !isUnsignedBuild &&
     isGitHubActions() &&
     process.platform === 'darwin' &&
     osxNotarize === undefined
@@ -232,13 +242,14 @@ async function packageApp() {
         hardenedRuntime: true,
         entitlements: entitlementsPath,
       }),
-      type: isPublishableBuild ? 'distribution' : 'development',
+      type:
+        isPublishableBuild && !isUnsignedBuild ? 'distribution' : 'development',
       // For development, we will use '-' as the identifier so that codesign
       // will sign the app to run locally. We need to disable 'identity-validation'
       // or otherwise it will replace '-' with one of the regular codesigning
       // identities in our system.
-      identity: isDevelopmentBuild ? '-' : undefined,
-      identityValidation: !isDevelopmentBuild,
+      identity: isDevelopmentBuild || isUnsignedBuild ? '-' : undefined,
+      identityValidation: !isDevelopmentBuild && !isUnsignedBuild,
     },
     osxNotarize,
     protocols: [
