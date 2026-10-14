@@ -444,6 +444,13 @@
     }
   }
 
+  &.unified-diff.no-word-wrap {
+    .content {
+      white-space: pre;
+      word-break: normal;
+    }
+  }
+
   &.unified-diff {
     .row {
       .before,

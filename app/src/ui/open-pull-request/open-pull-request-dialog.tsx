@@ -52,6 +52,9 @@ interface IOpenPullRequestDialogProps {
    */
   readonly prRecentBaseBranches: ReadonlyArray<Branch>
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /** Whether we should display side by side diffs. */
   readonly showSideBySideDiff: boolean
 
@@ -185,6 +188,7 @@ export class OpenPullRequestDialog extends React.Component<IOpenPullRequestDialo
         imageDiffType={imageDiffType}
         nonLocalCommitSHA={nonLocalCommitSHA}
         selectedFile={file}
+        wrapUnifiedDiff={this.props.wrapUnifiedDiff}
         showSideBySideDiff={this.props.showSideBySideDiff}
         repository={repository}
         onOpenInExternalEditor={this.props.onOpenInExternalEditor}

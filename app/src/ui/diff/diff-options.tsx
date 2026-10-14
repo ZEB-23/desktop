@@ -18,6 +18,12 @@ interface IDiffOptionsProps {
     hideWhitespaceChanges: boolean
   ) => void
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
+  /** Called when the user changes word wrapping in unified diffs. */
+  readonly onWrapUnifiedDiffChanged: (checked: boolean) => void
+
   readonly showSideBySideDiff: boolean
   readonly onShowSideBySideDiffChanged: (showSideBySideDiff: boolean) => void
 
@@ -122,6 +128,7 @@ export class DiffOptions extends React.Component<
         <h3 id="diff-options-popover-header">{header}</h3>
         {this.renderHideWhitespaceChanges()}
         {this.renderShowSideBySide()}
+        {!this.props.showSideBySideDiff && this.renderWordWrap()}
       </Popover>
     )
   }
@@ -152,6 +159,27 @@ export class DiffOptions extends React.Component<
             </>
           }
           onSelected={this.onSideBySideSelected}
+        />
+      </fieldset>
+    )
+  }
+
+  private onWrapUnifiedDiffChanged = (
+    event: React.FormEvent<HTMLInputElement>
+  ) => {
+    this.props.onWrapUnifiedDiffChanged(event.currentTarget.checked)
+  }
+
+  private renderWordWrap() {
+    return (
+      <fieldset>
+        <legend>Line wrapping</legend>
+        <Checkbox
+          value={
+            this.props.wrapUnifiedDiff ? CheckboxValue.On : CheckboxValue.Off
+          }
+          onChange={this.onWrapUnifiedDiffChanged}
+          label={__DARWIN__ ? 'Word Wrap' : 'Word wrap'}
         />
       </fieldset>
     )

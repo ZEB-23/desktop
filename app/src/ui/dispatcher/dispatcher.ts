@@ -2428,6 +2428,11 @@ export class Dispatcher {
     )
   }
 
+  /** Change word wrapping in unified diffs. */
+  public onWrapUnifiedDiffChanged(wrapUnifiedDiff: boolean) {
+    return this.appStore._setWrapUnifiedDiff(wrapUnifiedDiff)
+  }
+
   /** Change the side by side diff setting */
   public onShowSideBySideDiffChanged(showSideBySideDiff: boolean) {
     return this.appStore._setShowSideBySideDiff(showSideBySideDiff)

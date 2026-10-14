@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { getWrapUnifiedDiff } from '../../lib/diff-mode'
 import * as Path from 'path'
 import { AppFileStatusKind, CommittedFileChange } from '../../../models/status'
 import { IDiff, ImageDiffType } from '../../../models/diff'
@@ -42,6 +43,9 @@ interface ICopilotConflictsChangesState {
   readonly fileContents: IFileContents | null
   readonly noResolution: boolean
   readonly diffError: boolean
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   readonly showSideBySideDiff: boolean
   readonly hideWhitespaceInDiff: boolean
   readonly imageDiffType: ImageDiffType
@@ -74,6 +78,7 @@ export class CopilotConflictsChanges extends React.Component<
       noResolution: false,
       diffError: false,
       showSideBySideDiff: false,
+      wrapUnifiedDiff: getWrapUnifiedDiff(),
       hideWhitespaceInDiff: false,
       imageDiffType: ImageDiffType.TwoUp,
       isSubheaderExpanded: false,
@@ -259,6 +264,10 @@ export class CopilotConflictsChanges extends React.Component<
     this.setState({ selectedFile: file, isSubheaderExpanded: false })
   }
 
+  private onWrapUnifiedDiffChanged = (wrapUnifiedDiff: boolean) => {
+    this.setState({ wrapUnifiedDiff })
+  }
+
   private onShowSideBySideDiffChanged = (showSideBySideDiff: boolean) => {
     this.setState({ showSideBySideDiff })
   }
@@ -351,6 +360,7 @@ export class CopilotConflictsChanges extends React.Component<
       diff,
       noResolution,
       diffError,
+      wrapUnifiedDiff,
       showSideBySideDiff,
       hideWhitespaceInDiff,
       fileContents,
@@ -379,7 +389,9 @@ export class CopilotConflictsChanges extends React.Component<
             isInteractiveDiff={false}
             hideWhitespaceChanges={hideWhitespaceInDiff}
             onHideWhitespaceChangesChanged={this.onHideWhitespaceInDiffChanged}
+            wrapUnifiedDiff={wrapUnifiedDiff}
             showSideBySideDiff={showSideBySideDiff}
+            onWrapUnifiedDiffChanged={this.onWrapUnifiedDiffChanged}
             onShowSideBySideDiffChanged={this.onShowSideBySideDiffChanged}
             onDiffOptionsOpened={this.onDiffOptionsOpened}
           />
@@ -455,6 +467,7 @@ export class CopilotConflictsChanges extends React.Component<
                 externalFileContents={fileContents}
                 imageDiffType={this.state.imageDiffType}
                 hideWhitespaceInDiff={hideWhitespaceInDiff}
+                wrapUnifiedDiff={wrapUnifiedDiff}
                 showSideBySideDiff={showSideBySideDiff}
                 showDiffCheckMarks={false}
                 onOpenBinaryFile={this.onOpenBinaryFile}

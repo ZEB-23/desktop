@@ -44,6 +44,9 @@ interface IChangesProps {
    */
   readonly askForConfirmationOnDiscardChanges: boolean
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /**
    * Whether we should display side by side diffs.
    */
@@ -106,7 +109,9 @@ export class Changes extends React.Component<IChangesProps, {}> {
           path={this.props.file.path}
           status={this.props.file.status}
           diff={this.props.diff}
+          wrapUnifiedDiff={this.props.wrapUnifiedDiff}
           showSideBySideDiff={this.props.showSideBySideDiff}
+          onWrapUnifiedDiffChanged={this.onWrapUnifiedDiffChanged}
           onShowSideBySideDiffChanged={this.onShowSideBySideDiffChanged}
           hideWhitespaceInDiff={this.props.hideWhitespaceInDiff}
           onHideWhitespaceInDiffChanged={this.onHideWhitespaceInDiffChanged}
@@ -122,6 +127,7 @@ export class Changes extends React.Component<IChangesProps, {}> {
           onDiscardChanges={this.onDiscardChanges}
           diff={this.props.diff}
           hideWhitespaceInDiff={this.props.hideWhitespaceInDiff}
+          wrapUnifiedDiff={this.props.wrapUnifiedDiff}
           showSideBySideDiff={this.props.showSideBySideDiff}
           showDiffCheckMarks={this.props.showDiffCheckMarks}
           askForConfirmationOnDiscardChanges={
@@ -134,6 +140,10 @@ export class Changes extends React.Component<IChangesProps, {}> {
         />
       </div>
     )
+  }
+
+  private onWrapUnifiedDiffChanged = (wrapUnifiedDiff: boolean) => {
+    this.props.dispatcher.onWrapUnifiedDiffChanged(wrapUnifiedDiff)
   }
 
   private onShowSideBySideDiffChanged = (showSideBySideDiff: boolean) => {

@@ -70,6 +70,9 @@ interface IDiffProps {
   /** Hiding whitespace in diff. */
   readonly hideWhitespaceInDiff: boolean
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /** Whether we should display side by side diffs. */
   readonly showSideBySideDiff: boolean
 
@@ -290,6 +293,7 @@ export class Diff extends React.Component<IDiffProps, IDiffState> {
         diff={diff}
         fileContents={this.props.fileContents}
         hideWhitespaceInDiff={this.props.hideWhitespaceInDiff}
+        wrapUnifiedDiff={this.props.wrapUnifiedDiff}
         showSideBySideDiff={this.props.showSideBySideDiff}
         onIncludeChanged={this.props.onIncludeChanged}
         onDiscardChanges={this.props.onDiscardChanges}

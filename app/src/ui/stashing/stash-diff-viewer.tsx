@@ -30,6 +30,9 @@ interface IStashDiffViewerProps {
   /** Should the app propt the user to confirm a discard stash */
   readonly askForConfirmationOnDiscardStash: boolean
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /** Whether we should display side by side diffs. */
   readonly showSideBySideDiff: boolean
 
@@ -113,6 +116,7 @@ export class StashDiffViewer extends React.PureComponent<IStashDiffViewerProps> 
           imageDiffType={imageDiffType}
           hideWhitespaceInDiff={false}
           showDiffCheckMarks={false}
+          wrapUnifiedDiff={this.props.wrapUnifiedDiff}
           showSideBySideDiff={this.props.showSideBySideDiff}
           onOpenBinaryFile={onOpenBinaryFile}
           onChangeImageDiffType={onChangeImageDiffType}

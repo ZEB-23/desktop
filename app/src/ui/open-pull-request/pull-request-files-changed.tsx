@@ -42,6 +42,9 @@ interface IPullRequestFilesChangedProps {
   /** The type of image diff to display. */
   readonly imageDiffType: ImageDiffType
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /** Whether we should display side by side diffs. */
   readonly showSideBySideDiff: boolean
 
@@ -67,6 +70,9 @@ interface IPullRequestFilesChangedProps {
 }
 
 interface IPullRequestFilesChangedState {
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   readonly showSideBySideDiff: boolean
 }
 
@@ -80,7 +86,10 @@ export class PullRequestFilesChanged extends React.Component<
   public constructor(props: IPullRequestFilesChangedProps) {
     super(props)
 
-    this.state = { showSideBySideDiff: props.showSideBySideDiff }
+    this.state = {
+      showSideBySideDiff: props.showSideBySideDiff,
+      wrapUnifiedDiff: props.wrapUnifiedDiff,
+    }
   }
 
   private onOpenFile = (path: string) => {
@@ -104,6 +113,10 @@ export class PullRequestFilesChanged extends React.Component<
       this.props.repository,
       selectedFile
     )
+  }
+
+  private onWrapUnifiedDiffChanged = (wrapUnifiedDiff: boolean) => {
+    this.setState({ wrapUnifiedDiff })
   }
 
   private onShowSideBySideDiffChanged = (showSideBySideDiff: boolean) => {
@@ -240,7 +253,7 @@ export class PullRequestFilesChanged extends React.Component<
 
   private renderHeader() {
     const { hideWhitespaceInDiff } = this.props
-    const { showSideBySideDiff } = this.state
+    const { showSideBySideDiff, wrapUnifiedDiff } = this.state
     return (
       <div className="files-changed-header">
         <div className="commits-displayed">
@@ -250,7 +263,9 @@ export class PullRequestFilesChanged extends React.Component<
           isInteractiveDiff={false}
           hideWhitespaceChanges={hideWhitespaceInDiff}
           onHideWhitespaceChangesChanged={this.onHideWhitespaceInDiffChanged}
+          wrapUnifiedDiff={wrapUnifiedDiff}
           showSideBySideDiff={showSideBySideDiff}
+          onWrapUnifiedDiffChanged={this.onWrapUnifiedDiffChanged}
           onShowSideBySideDiffChanged={this.onShowSideBySideDiffChanged}
           onDiffOptionsOpened={this.onDiffOptionsOpened}
         />
@@ -291,7 +306,7 @@ export class PullRequestFilesChanged extends React.Component<
 
     const { diff, repository, imageDiffType, hideWhitespaceInDiff } = this.props
 
-    const { showSideBySideDiff } = this.state
+    const { showSideBySideDiff, wrapUnifiedDiff } = this.state
 
     return (
       <SeamlessDiffSwitcher
@@ -301,6 +316,7 @@ export class PullRequestFilesChanged extends React.Component<
         diff={diff}
         readOnly={true}
         hideWhitespaceInDiff={hideWhitespaceInDiff}
+        wrapUnifiedDiff={wrapUnifiedDiff}
         showSideBySideDiff={showSideBySideDiff}
         showDiffCheckMarks={false}
         onOpenBinaryFile={this.onOpenBinaryFile}

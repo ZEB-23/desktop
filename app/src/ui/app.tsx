@@ -2716,6 +2716,7 @@ export class App extends React.Component<IAppProps, IAppState> {
           prRecentBaseBranches,
           repository,
           showSideBySideDiff,
+          wrapUnifiedDiff,
           currentBranchHasPullRequest,
         } = popup
 
@@ -2735,6 +2736,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             repository={repository}
             externalEditorLabel={externalEditorLabel}
             showSideBySideDiff={showSideBySideDiff}
+            wrapUnifiedDiff={wrapUnifiedDiff}
             currentBranchHasPullRequest={currentBranchHasPullRequest}
             onDismissed={onPopupDismissedFn}
             onOpenInExternalEditor={this.onOpenInExternalEditor}
@@ -3997,6 +3999,7 @@ export class App extends React.Component<IAppProps, IAppState> {
           showDiffCheckMarks={state.showDiffCheckMarks}
           preferAbsoluteDates={state.preferAbsoluteDates}
           showSideBySideDiff={state.showSideBySideDiff}
+          wrapUnifiedDiff={state.wrapUnifiedDiff}
           focusCommitMessage={state.focusCommitMessage}
           askForConfirmationOnDiscardChanges={
             state.askForConfirmationOnDiscardChanges
