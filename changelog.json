@@ -1,10 +1,5 @@
 {
   "releases": {
-    "3.6.8-beta3": [
-      "[Added] Toggle word wrapping in unified diffs through Diff Options - ZEB-23/desktop#1",
-      "[Fixed] Disable wrapping and allow horizontal scrolling when Word wrap is unchecked",
-      "[Improved] Remember the unified word-wrap preference and recalculate virtualized row heights when wrapping or viewer width changes"
-    ],
     "3.6.8-beta2": [
       "[Added] Add syntax highlighting for Svelte files - #22969. Thanks @Klaynight-dev!",
       "[Fixed] Flag worktrees whose folder is missing with a clear warning and offer to remove them instead of failing with a raw git error when switching branches or worktrees - #22607. Thanks @francisrath!",

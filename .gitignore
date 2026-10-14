@@ -20,6 +20,3 @@ junit*.xml
 *.swp
 tslint-rules/
 playwright-videos/
-
-# Generated fork release artifacts
-beta-assets/

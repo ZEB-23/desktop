@@ -1,9 +1,9 @@
 {
   "name": "desktop",
-  "productName": "GitHub Desktop Word Wrap BETA",
-  "bundleID": "com.zeb23.GitHubDesktopWordWrapBeta",
+  "productName": "GitHub Desktop",
+  "bundleID": "com.github.GitHubClient",
   "companyName": "GitHub, Inc.",
-  "version": "3.6.8-beta3",
+  "version": "3.6.8-beta2",
   "main": "./main.js",
   "repository": {
     "type": "git",

@@ -198,7 +198,7 @@ class UpdateStore {
    *                       attempt to retrieve the latest available deployment.
    */
   public async checkForUpdates(inBackground: boolean, skipGuidCheck: boolean) {
-    // An empty feed explicitly disables updates in independently distributed builds.
+    // An empty feed disables both background and user-initiated update checks.
     if (__UPDATES_URL__.length === 0) {
       return
     }
