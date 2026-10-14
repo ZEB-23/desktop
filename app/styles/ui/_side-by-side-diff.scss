@@ -448,6 +448,8 @@
     .content {
       white-space: pre;
       word-break: normal;
+      // Let the virtualized grid scroll the entire diff, rather than each line.
+      overflow: visible;
     }
   }
 
