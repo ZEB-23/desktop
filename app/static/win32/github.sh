@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CONTENTS="$(dirname "$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")")"
-ELECTRON="$CONTENTS/GitHubDesktop.exe"
+ELECTRON="$CONTENTS/GitHubDesktopWordWrapBeta.exe"
 
 if grep -q Microsoft /proc/version; then
 	if [ -x /bin/wslpath ]; then
