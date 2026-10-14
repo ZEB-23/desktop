@@ -63,6 +63,9 @@ interface ISelectedCommitsProps {
   readonly onViewCommitOnGitHub: (SHA: string, filePath?: string) => void
   readonly hideWhitespaceInDiff: boolean
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /** Whether we should display side by side diffs. */
   readonly showSideBySideDiff: boolean
 
@@ -166,6 +169,7 @@ export class SelectedCommits extends React.Component<
           readOnly={true}
           hideWhitespaceInDiff={this.props.hideWhitespaceInDiff}
           showDiffCheckMarks={false}
+          wrapUnifiedDiff={this.props.wrapUnifiedDiff}
           showSideBySideDiff={this.props.showSideBySideDiff}
           onOpenBinaryFile={this.props.onOpenBinaryFile}
           onChangeImageDiffType={this.props.onChangeImageDiffType}
@@ -189,7 +193,9 @@ export class SelectedCommits extends React.Component<
         diff={this.props.currentDiff}
         path={path}
         status={status}
+        wrapUnifiedDiff={this.props.wrapUnifiedDiff}
         showSideBySideDiff={this.props.showSideBySideDiff}
+        onWrapUnifiedDiffChanged={this.onWrapUnifiedDiffChanged}
         onShowSideBySideDiffChanged={this.onShowSideBySideDiffChanged}
         hideWhitespaceInDiff={this.props.hideWhitespaceInDiff}
         onHideWhitespaceInDiffChanged={this.onHideWhitespaceInDiffChanged}
@@ -236,6 +242,10 @@ export class SelectedCommits extends React.Component<
       this.props.repository,
       this.props.selectedFile as CommittedFileChange
     )
+  }
+
+  private onWrapUnifiedDiffChanged = (wrapUnifiedDiff: boolean) => {
+    this.props.dispatcher.onWrapUnifiedDiffChanged(wrapUnifiedDiff)
   }
 
   private onShowSideBySideDiffChanged = (showSideBySideDiff: boolean) => {

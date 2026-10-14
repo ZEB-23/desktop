@@ -51,6 +51,9 @@ interface IRepositoryViewProps {
   readonly imageDiffType: ImageDiffType
   readonly hideWhitespaceInChangesDiff: boolean
   readonly hideWhitespaceInHistoryDiff: boolean
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   readonly showSideBySideDiff: boolean
   readonly showDiffCheckMarks: boolean
   readonly preferAbsoluteDates: boolean
@@ -455,6 +458,7 @@ export class RepositoryView extends React.Component<
           askForConfirmationOnDiscardStash={
             this.props.askForConfirmationOnDiscardStash
           }
+          wrapUnifiedDiff={this.props.wrapUnifiedDiff}
           showSideBySideDiff={this.props.showSideBySideDiff}
           onOpenBinaryFile={this.onOpenBinaryFile}
           onOpenSubmodule={this.onOpenSubmodule}
@@ -510,6 +514,7 @@ export class RepositoryView extends React.Component<
         onOpenInExternalEditor={this.props.onOpenInExternalEditor}
         onViewCommitOnGitHub={this.props.onViewCommitOnGitHub}
         hideWhitespaceInDiff={this.props.hideWhitespaceInHistoryDiff}
+        wrapUnifiedDiff={this.props.wrapUnifiedDiff}
         showSideBySideDiff={this.props.showSideBySideDiff}
         onOpenBinaryFile={this.onOpenBinaryFile}
         onOpenSubmodule={this.onOpenSubmodule}
@@ -604,6 +609,7 @@ export class RepositoryView extends React.Component<
           isCommitting={this.props.state.isCommitting}
           imageDiffType={this.props.imageDiffType}
           hideWhitespaceInDiff={this.props.hideWhitespaceInChangesDiff}
+          wrapUnifiedDiff={this.props.wrapUnifiedDiff}
           showSideBySideDiff={this.props.showSideBySideDiff}
           showDiffCheckMarks={this.props.showDiffCheckMarks}
           onOpenBinaryFile={this.onOpenBinaryFile}

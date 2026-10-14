@@ -18,3 +18,17 @@ export function getShowSideBySideDiff(): boolean {
 export function setShowSideBySideDiff(showSideBySideDiff: boolean) {
   setBoolean(showSideBySideDiffKey, showSideBySideDiff)
 }
+
+/** Preserve the existing wrapping behavior for unified diffs. */
+export const WrapUnifiedDiffDefault = true
+const wrapUnifiedDiffKey = 'wrap-unified-diff'
+
+/** Gets the user's word-wrap preference for unified diffs. */
+export function getWrapUnifiedDiff(): boolean {
+  return getBoolean(wrapUnifiedDiffKey, WrapUnifiedDiffDefault)
+}
+
+/** Persists the user's word-wrap preference for unified diffs. */
+export function setWrapUnifiedDiff(wrapUnifiedDiff: boolean) {
+  setBoolean(wrapUnifiedDiffKey, wrapUnifiedDiff)
+}

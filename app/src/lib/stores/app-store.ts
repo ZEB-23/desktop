@@ -367,6 +367,9 @@ import {
   DiscardChangesError,
 } from '../error-with-metadata'
 import {
+  WrapUnifiedDiffDefault,
+  getWrapUnifiedDiff,
+  setWrapUnifiedDiff,
   ShowSideBySideDiffDefault,
   getShowSideBySideDiff,
   setShowSideBySideDiff,
@@ -684,6 +687,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     hideWhitespaceInPullRequestDiffDefault
   /** Whether or not the spellchecker is enabled for commit summary and description */
   private commitSpellcheckEnabled: boolean = commitSpellcheckEnabledDefault
+  private wrapUnifiedDiff: boolean = WrapUnifiedDiffDefault
   private showSideBySideDiff: boolean = ShowSideBySideDiffDefault
 
   private uncommittedChangesStrategy = defaultUncommittedChangesStrategy
@@ -1320,6 +1324,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       hideWhitespaceInHistoryDiff: this.hideWhitespaceInHistoryDiff,
       hideWhitespaceInPullRequestDiff: this.hideWhitespaceInPullRequestDiff,
       showSideBySideDiff: this.showSideBySideDiff,
+      wrapUnifiedDiff: this.wrapUnifiedDiff,
       selectedShell: this.selectedShell,
       repositoryFilterText: this.repositoryFilterText,
       resolvedExternalEditor: this.resolvedExternalEditor,
@@ -2576,6 +2581,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       commitSpellcheckEnabledDefault
     )
     this.showSideBySideDiff = getShowSideBySideDiff()
+    this.wrapUnifiedDiff = getWrapUnifiedDiff()
 
     this.selectedTheme = getPersistedThemeName()
     // Make sure the persisted theme is applied
@@ -8032,6 +8038,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
   }
 
+  /** This shouldn't be called directly. See `Dispatcher`. */
+  public _setWrapUnifiedDiff(wrapUnifiedDiff: boolean) {
+    if (wrapUnifiedDiff !== this.wrapUnifiedDiff) {
+      setWrapUnifiedDiff(wrapUnifiedDiff)
+      this.wrapUnifiedDiff = wrapUnifiedDiff
+      this.emitUpdate()
+    }
+  }
+
   public _setShowSideBySideDiff(showSideBySideDiff: boolean) {
     if (showSideBySideDiff !== this.showSideBySideDiff) {
       setShowSideBySideDiff(showSideBySideDiff)
@@ -10169,8 +10184,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
     const prRecentBaseBranches = recentBranches.filter(
       b => b.upstreamRemoteName === remote || b.remoteName === remote
     )
-    const { imageDiffType, selectedExternalEditor, showSideBySideDiff } =
-      this.getState()
+    const {
+      imageDiffType,
+      selectedExternalEditor,
+      showSideBySideDiff,
+      wrapUnifiedDiff,
+    } = this.getState()
 
     const nonLocalCommitSHA =
       commitSHAs.length > 0 && !localCommitSHAs.includes(commitSHAs[0])
@@ -10188,6 +10207,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       externalEditorLabel: selectedExternalEditor ?? undefined,
       nonLocalCommitSHA,
       showSideBySideDiff,
+      wrapUnifiedDiff,
       currentBranchHasPullRequest: currentPullRequest !== null,
     })
   }

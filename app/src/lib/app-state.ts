@@ -299,6 +299,9 @@ export interface IAppState {
   /** Whether we should hide white space changes in the pull request diff */
   readonly hideWhitespaceInPullRequestDiff: boolean
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /** Whether we should show side by side diffs */
   readonly showSideBySideDiff: boolean
 

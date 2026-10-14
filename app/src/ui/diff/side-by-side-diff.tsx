@@ -140,6 +140,9 @@ interface ISideBySideDiffProps {
    */
   readonly askForConfirmationOnDiscardChanges?: boolean
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
   /**
    * Whether we'll show the diff in a side-by-side layout.
    */
@@ -462,6 +465,10 @@ export class SideBySideDiff extends React.Component<
       this.rowSelectableGroupStaticDataCache.clear()
     }
 
+    if (prevProps.wrapUnifiedDiff !== this.props.wrapUnifiedDiff) {
+      this.clearListRowsHeightCache()
+    }
+
     if (prevProps.showSideBySideDiff !== this.props.showSideBySideDiff) {
       this.rowSelectableGroupStaticDataCache.clear()
     }
@@ -595,6 +602,8 @@ export class SideBySideDiff extends React.Component<
     const rows = this.getCurrentDiffRows()
     const containerClassName = classNames('side-by-side-diff-container', {
       'unified-diff': !this.props.showSideBySideDiff,
+      'no-word-wrap':
+        !this.props.showSideBySideDiff && !this.props.wrapUnifiedDiff,
       [`selecting-${this.state.selectingTextInRow}`]:
         this.props.showSideBySideDiff &&
         this.state.selectingTextInRow !== undefined,
@@ -646,6 +655,7 @@ export class SideBySideDiff extends React.Component<
                 isSearching={isSearching}
                 selectedSearchResult={this.state.selectedSearchResult}
                 searchQuery={this.state.searchQuery}
+                wrapUnifiedDiff={this.props.wrapUnifiedDiff}
                 showSideBySideDiff={this.props.showSideBySideDiff}
                 beforeTokens={this.state.beforeTokens}
                 afterTokens={this.state.afterTokens}
@@ -979,6 +989,7 @@ export class SideBySideDiff extends React.Component<
 
   private clearListRowsHeightCache = () => {
     listRowsHeightCache.clearAll()
+    this.virtualListRef.current?.recomputeRowHeights()
   }
 
   private async initDiffSyntaxMode() {

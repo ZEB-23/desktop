@@ -11,6 +11,12 @@ interface IDiffHeaderProps {
   readonly status: AppFileStatus
   readonly diff: IDiff | null
 
+  /** Whether unified diff lines should wrap to the available width. */
+  readonly wrapUnifiedDiff: boolean
+
+  /** Called when the user changes word wrapping in unified diffs. */
+  readonly onWrapUnifiedDiffChanged: (checked: boolean) => void
+
   /** Whether we should display side by side diffs. */
   readonly showSideBySideDiff: boolean
 
@@ -60,7 +66,9 @@ export class DiffHeader extends React.Component<IDiffHeaderProps, {}> {
           this.props.onHideWhitespaceInDiffChanged
         }
         hideWhitespaceChanges={this.props.hideWhitespaceInDiff}
+        onWrapUnifiedDiffChanged={this.props.onWrapUnifiedDiffChanged}
         onShowSideBySideDiffChanged={this.props.onShowSideBySideDiffChanged}
+        wrapUnifiedDiff={this.props.wrapUnifiedDiff}
         showSideBySideDiff={this.props.showSideBySideDiff}
         onDiffOptionsOpened={this.props.onDiffOptionsOpened}
       />
