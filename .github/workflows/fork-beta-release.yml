@@ -26,7 +26,7 @@ jobs:
             runner: macos-15-intel
             arch: x64
           - platform: macos
-            runner: macos-15-arm64
+            runner: macos-15
             arch: arm64
           - platform: windows
             runner: windows-2022
@@ -49,6 +49,9 @@ jobs:
       DESKTOP_E2E_UPDATES_URL: ''
       TARGET_ARCH: ${{ matrix.arch }}
       npm_config_arch: ${{ matrix.arch }}
+      npm_config_runtime: node
+      npm_config_target: 24.19.0
+      npm_config_disturl: https://nodejs.org/download/release
     steps:
       - uses: actions/checkout@v4
         with:
