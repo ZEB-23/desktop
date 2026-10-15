@@ -1,0 +1,160 @@
+name: Windows x64 BETA release
+
+on:
+  push:
+    branches:
+      - automation/windows-x64-beta-2026-10-15
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-x64-beta-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_COMMIT: 80d76b2eea84460813f34cf7384f84c3e8ab73fd
+  UPSTREAM_BASELINE: bebc062caafcf818993b9f53397b976d33484231
+  RELEASE_TAG: beta-2026-10-15
+
+jobs:
+  build:
+    name: Build and verify Windows x64 EXE
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+        working-directory: application
+    env:
+      RELEASE_CHANNEL: beta
+      TARGET_ARCH: x64
+      npm_config_arch: x64
+      npm_config_runtime: node
+      npm_config_target: 24.19.0
+      npm_config_disturl: https://nodejs.org/download/release
+      RELEASE_OUTPUT: ${{ github.workspace }}/windows-beta-release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: automation
+          sparse-checkout: release-tools/windows-x64
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_COMMIT }}
+          path: application
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: yarn
+          cache-dependency-path: application/yarn.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: x64
+      - name: Cache exact locked dependencies from the public registry
+        run:
+          node
+          ../automation/release-tools/windows-x64/cache-public-release-dependencies.mjs
+          "$RUNNER_TEMP/beta.yarnrc"
+      - name: Install dependencies
+        run:
+          node vendor/yarn-1.21.1.js --use-yarnrc "$RUNNER_TEMP/beta.yarnrc"
+          install --frozen-lockfile
+      - name: Validate source and default update policy
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+          node -e "if (process.arch !== 'x64') throw new Error('Runner architecture mismatch')"
+          TS_NODE_PROJECT=script/tsconfig.json node -r ts-node/register -e 'const assert=require("node:assert/strict"); const d=require("./script/dist-info"); const p=require("./app/package.json"); assert.equal(d.getUpdatesURL(),""); assert.equal(d.shouldMakeDelta(),false); assert.equal(d.getWindowsIdentifierName(),"GitHubDesktop"); assert.equal(p.productName,"GitHub Desktop"); assert.equal(p.bundleID,"com.github.GitHubClient"); assert.equal(p.version,"3.6.8-beta2");'
+          yarn validate-changelog
+          yarn compile:script
+          node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json
+      - name: Compile and build production application
+        run: yarn build:prod
+      - name: Package only the self-contained EXE installer
+        env:
+          NODE_ENV: production
+        run: node ../automation/release-tools/windows-x64/package.cjs
+      - name: Install and verify original names and shortcuts
+        shell: pwsh
+        run: '& ../automation/release-tools/windows-x64/verify-install.ps1'
+      - name:
+          Test installed unified diff wrapping, scrolling and gutter alignment
+        run:
+          node node_modules/playwright/cli.js test --config
+          app/test/e2e/playwright.config.ts unified-diff-scroll.e2e.ts
+      - name: Verify source was not modified by packaging
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-exe
+          path: ${{ github.workspace }}/windows-beta-release/*
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: windows-x64-validation-logs
+          path: application/playwright-videos/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publish:
+    name: Publish Windows x64 BETA
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: release-tools/windows-x64
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-exe
+          path: release-output
+      - name: Verify downloaded installer and finalize release notes
+        run: |
+          node - <<'JS'
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+          const crypto = require('node:crypto');
+          const manifest = JSON.parse(fs.readFileSync('release-output/build-manifest.json'));
+          assert.equal(manifest.sourceCommit, process.env.SOURCE_COMMIT);
+          assert.equal(manifest.upstreamDevelopment, process.env.UPSTREAM_BASELINE);
+          assert.equal(manifest.automationCommit, process.env.GITHUB_SHA);
+          assert.equal(manifest.applicationVersion, '3.6.8-beta2');
+          assert.equal(manifest.productName, 'GitHub Desktop');
+          assert.equal(manifest.arch, 'x64');
+          assert.equal(manifest.platform, 'win32');
+          assert.equal(manifest.remoteUpdates, false);
+          assert.equal(manifest.file, 'GitHubDesktopSetup-x64.exe');
+          const bytes = fs.readFileSync('release-output/' + manifest.file);
+          assert.equal(bytes.length, manifest.bytes);
+          assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), manifest.sha256);
+          const notes = fs.readFileSync('release-tools/windows-x64/RELEASE-NOTES.md', 'utf8');
+          fs.writeFileSync('release-output/RELEASE-NOTES.md', notes + '\nSHA256 (`' + manifest.file + '`):\n\n```text\n' + manifest.sha256 + '\n```\n\nValidated with a real Windows install, original shortcut/product names, and the installed Electron diff regression test.\n');
+          console.log('Installer checksum and merged source provenance verified.');
+          JS
+      - name: Publish a prerelease with only the Windows x64 EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
+        run: |
+          latest_commit=$(git ls-remote --heads origin "refs/heads/$RELEASE_BRANCH" | cut -f1)
+          test "$latest_commit" = "$GITHUB_SHA"
+          gh release create "$RELEASE_TAG" --target "$SOURCE_COMMIT" \
+            --title "GitHub Desktop BETA (2026-10-15)" \
+            --notes-file release-output/RELEASE-NOTES.md --prerelease --latest=false --draft
+          gh release upload "$RELEASE_TAG" release-output/GitHubDesktopSetup-x64.exe
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease --latest=false
+          gh release view "$RELEASE_TAG" --json url --jq .url >> "$GITHUB_STEP_SUMMARY"
