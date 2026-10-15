@@ -41,11 +41,11 @@ async function main() {
   for (const key of ['productName', 'bundleID', 'version', 'companyName']) {
     assert.equal(installedMetadata[key], pkg[key])
   }
-  assert(
-    (await readFile(join(root, 'out/renderer.js'), 'utf8')).includes(
-      sourceCommit
-    )
-  )
+  // Production optimization removes the development-only commit display from
+  // renderer.js. Verify the same source revision provider used by webpack.
+  process.env.TS_NODE_PROJECT = join(root, 'script/tsconfig.json')
+  appRequire('ts-node/register')
+  assert.equal(appRequire('./app/git-info').getSHA(), sourceCommit)
 
   const outputDirectory = join(root, 'dist/installer')
   const setupExe = 'GitHubDesktopSetup-x64.exe'
