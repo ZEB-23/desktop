@@ -22,11 +22,11 @@ import {
 } from '../../lib/fatal-error'
 import classNames from 'classnames'
 import {
-  List,
+  Grid,
   AutoSizer,
   CellMeasurerCache,
   CellMeasurer,
-  ListRowProps,
+  GridCellProps,
   OverscanIndicesGetterParams,
   defaultOverscanIndicesGetter,
 } from 'react-virtualized'
@@ -218,6 +218,9 @@ interface ISideBySideDiffState {
 
   readonly ariaLiveMessage: string
 
+  /** The widest measured unified row, retained while rows are virtualized. */
+  readonly unwrappedDiffWidth: number
+
   /** This tracks the last expanded hunk index so that we can refocus the expander after rerender */
   readonly lastExpandedHunk: {
     hunkIndex: number
@@ -234,8 +237,9 @@ export class SideBySideDiff extends React.Component<
   ISideBySideDiffProps,
   ISideBySideDiffState
 > {
-  private virtualListRef = React.createRef<List>()
+  private virtualGridRef = React.createRef<Grid>()
   private diffContainer: HTMLDivElement | null = null
+  private measureWidthFrame: number | null = null
 
   /** Diff to restore when "Collapse all expanded lines" option is used */
   private diffToRestore: ITextDiff | null = null
@@ -273,6 +277,7 @@ export class SideBySideDiff extends React.Component<
       selectingTextInRow: 'before',
       lastExpandedHunk: null,
       ariaLiveMessage: '',
+      unwrappedDiffWidth: 0,
     }
   }
 
@@ -291,16 +296,17 @@ export class SideBySideDiff extends React.Component<
     document.addEventListener('selectionchange', this.onDocumentSelectionChange)
 
     this.addContextMenuListenerToDiff()
+    this.scheduleWidthMeasurement()
   }
 
   private addContextMenuListenerToDiff = () => {
-    const diffNode = findDOMNode(this.virtualListRef.current)
+    const diffNode = findDOMNode(this.virtualGridRef.current)
     const diff = diffNode instanceof HTMLElement ? diffNode : null
     diff?.addEventListener('contextmenu', this.onContextMenuText)
   }
 
   private removeContextMenuListenerFromDiff = () => {
-    const diffNode = findDOMNode(this.virtualListRef.current)
+    const diffNode = findDOMNode(this.virtualGridRef.current)
     const diff = diffNode instanceof HTMLElement ? diffNode : null
     diff?.removeEventListener('contextmenu', this.onContextMenuText)
   }
@@ -416,6 +422,9 @@ export class SideBySideDiff extends React.Component<
   }
 
   public componentWillUnmount() {
+    if (this.measureWidthFrame !== null) {
+      cancelAnimationFrame(this.measureWidthFrame)
+    }
     window.removeEventListener('keydown', this.onWindowKeyDown)
     document.removeEventListener('mouseup', this.onEndSelection)
     document.removeEventListener('find-text', this.showSearch)
@@ -446,10 +455,13 @@ export class SideBySideDiff extends React.Component<
 
     // Scroll to top if we switched to a new file
     if (
-      this.virtualListRef.current !== null &&
+      this.virtualGridRef.current !== null &&
       this.props.file.id !== prevProps.file.id
     ) {
-      this.virtualListRef.current.scrollToPosition(0)
+      this.virtualGridRef.current.scrollToPosition({
+        scrollLeft: 0,
+        scrollTop: 0,
+      })
 
       // Reset selection
       this.textSelectionStartRow = undefined
@@ -476,10 +488,22 @@ export class SideBySideDiff extends React.Component<
     if (this.state.lastExpandedHunk !== prevState.lastExpandedHunk) {
       this.focusAfterLastExpandedHunkChange()
     }
+
+    if (
+      this.state.diff !== prevState.diff ||
+      this.props.file.id !== prevProps.file.id ||
+      this.props.wrapUnifiedDiff !== prevProps.wrapUnifiedDiff ||
+      this.props.showSideBySideDiff !== prevProps.showSideBySideDiff
+    ) {
+      if (this.state.unwrappedDiffWidth !== 0) {
+        this.setState({ unwrappedDiffWidth: 0 })
+      }
+    }
+    this.scheduleWidthMeasurement()
   }
 
   private focusListElement = () => {
-    const diffNode = findDOMNode(this.virtualListRef.current)
+    const diffNode = findDOMNode(this.virtualGridRef.current)
     const diff = diffNode instanceof HTMLElement ? diffNode : null
     diff?.focus()
   }
@@ -589,21 +613,23 @@ export class SideBySideDiff extends React.Component<
   }
 
   private onRowsRendered = (info: {
-    startIndex: number
-    stopIndex: number
+    rowStartIndex: number
+    rowStopIndex: number
   }) => {
-    this.renderedStartIndex = info.startIndex
-    this.renderedStopIndex = info.stopIndex
+    this.renderedStartIndex = info.rowStartIndex
+    this.renderedStopIndex = info.rowStopIndex
+    this.scheduleWidthMeasurement()
   }
 
   public render() {
     const { diff, ariaLiveMessage, isSearching } = this.state
 
     const rows = this.getCurrentDiffRows()
+    const noWordWrap =
+      !this.props.showSideBySideDiff && !this.props.wrapUnifiedDiff
     const containerClassName = classNames('side-by-side-diff-container', {
       'unified-diff': !this.props.showSideBySideDiff,
-      'no-word-wrap':
-        !this.props.showSideBySideDiff && !this.props.wrapUnifiedDiff,
+      'no-word-wrap': noWordWrap,
       [`selecting-${this.state.selectingTextInRow}`]:
         this.props.showSideBySideDiff &&
         this.state.selectingTextInRow !== undefined,
@@ -639,17 +665,29 @@ export class SideBySideDiff extends React.Component<
           />
           <AutoSizer onResize={this.clearListRowsHeightCache}>
             {({ height, width }) => (
-              <List
+              <Grid
+                columnCount={1}
+                columnWidth={
+                  noWordWrap
+                    ? Math.max(width, this.state.unwrappedDiffWidth)
+                    : width
+                }
+                autoContainerWidth={true}
+                containerStyle={
+                  noWordWrap
+                    ? { minWidth: this.state.unwrappedDiffWidth }
+                    : undefined
+                }
                 deferredMeasurementCache={listRowsHeightCache}
                 width={width}
                 height={height}
                 rowCount={rows.length}
                 rowHeight={this.getRowHeight}
-                rowRenderer={this.renderRow}
-                onRowsRendered={this.onRowsRendered}
-                ref={this.virtualListRef}
+                cellRenderer={this.renderRow}
+                onSectionRendered={this.onRowsRendered}
+                ref={this.virtualGridRef}
                 overscanIndicesGetter={this.overscanIndicesGetter}
-                // The following properties are passed to the list
+                // The following properties are passed to the grid
                 // to make sure that it gets re-rendered when any of
                 // them change.
                 isSearching={isSearching}
@@ -866,7 +904,12 @@ export class SideBySideDiff extends React.Component<
     return data
   }
 
-  private renderRow = ({ index, parent, style, key }: ListRowProps) => {
+  private renderRow = ({
+    rowIndex: index,
+    parent,
+    style,
+    key,
+  }: GridCellProps) => {
     const { diff } = this.state
     const rows = getDiffRows(
       diff,
@@ -911,7 +954,12 @@ export class SideBySideDiff extends React.Component<
         parent={parent}
         rowIndex={index}
       >
-        <div key={key} style={style} role="row" aria-rowindex={index}>
+        <div
+          key={key}
+          style={{ ...style, width: '100%' }}
+          role="row"
+          aria-rowindex={index}
+        >
           <SideBySideDiffRow
             row={rowWithTokens}
             lineNumberWidth={lineNumberWidth}
@@ -989,7 +1037,45 @@ export class SideBySideDiff extends React.Component<
 
   private clearListRowsHeightCache = () => {
     listRowsHeightCache.clearAll()
-    this.virtualListRef.current?.recomputeRowHeights()
+    this.virtualGridRef.current?.recomputeGridSize()
+  }
+
+  private scheduleWidthMeasurement = () => {
+    if (
+      this.measureWidthFrame !== null ||
+      this.props.showSideBySideDiff ||
+      this.props.wrapUnifiedDiff
+    ) {
+      return
+    }
+
+    this.measureWidthFrame = requestAnimationFrame(() => {
+      this.measureWidthFrame = null
+      if (this.props.showSideBySideDiff || this.props.wrapUnifiedDiff) {
+        return
+      }
+
+      let width = this.state.unwrappedDiffWidth
+      for (const row of this.diffContainer?.querySelectorAll<HTMLElement>(
+        '[role=row][aria-rowindex]'
+      ) ?? []) {
+        const content = row.querySelector<HTMLElement>('.content-wrapper')
+        if (content !== null) {
+          // Measure the text and gutter, not the viewport's minimum row width.
+          // Keeping the latter would leave a scrollbar after narrowing a pane.
+          const contentLeft = content.getBoundingClientRect().left
+          const rowLeft = row.getBoundingClientRect().left
+          width = Math.max(
+            width,
+            Math.ceil(contentLeft - rowLeft + content.scrollWidth)
+          )
+        }
+      }
+
+      if (width > this.state.unwrappedDiffWidth) {
+        this.setState({ unwrappedDiffWidth: width })
+      }
+    })
   }
 
   private async initDiffSyntaxMode() {
@@ -1272,7 +1358,7 @@ export class SideBySideDiff extends React.Component<
 
   private onUpdateSelection = (ev: MouseEvent) => {
     const { temporarySelection } = this.state
-    const list = this.virtualListRef.current
+    const list = this.virtualGridRef.current
     if (!temporarySelection || !list) {
       return
     }
@@ -1301,7 +1387,7 @@ export class SideBySideDiff extends React.Component<
       // Use row height cache in order to do the math faster
       let height = listRowsHeightCache.getHeight(index, 0)
       if (height === undefined) {
-        list.recomputeRowHeights(index)
+        list.recomputeGridSize({ rowIndex: index })
         height = listRowsHeightCache.getHeight(index, 0) ?? DefaultRowHeight
       }
 
@@ -1325,7 +1411,7 @@ export class SideBySideDiff extends React.Component<
 
         // Always scroll to the row that contains the mouse, to ease range-based
         // selection with it
-        list.scrollToRow(index)
+        list.scrollToCell({ columnIndex: 0, rowIndex: index })
 
         if (diffLineNumber !== null) {
           this.setState({
@@ -1714,7 +1800,10 @@ export class SideBySideDiff extends React.Component<
     const scrollToRow = searchResults?.get(index)?.row
 
     if (scrollToRow !== undefined) {
-      this.virtualListRef.current?.scrollToRow(scrollToRow)
+      this.virtualGridRef.current?.scrollToCell({
+        columnIndex: 0,
+        rowIndex: scrollToRow,
+      })
     }
   }
 

@@ -445,9 +445,23 @@
   }
 
   &.unified-diff.no-word-wrap {
+    .row {
+      // Match the fixed border reserving this space on unchanged rows.
+      .hunk-handle-place-holder {
+        flex-shrink: 0;
+      }
+
+      .before,
+      .after {
+        min-width: 0;
+      }
+    }
+
     .content {
       white-space: pre;
       word-break: normal;
+      // Let the virtualized grid scroll the entire diff, rather than each line.
+      overflow: visible;
     }
   }
 
